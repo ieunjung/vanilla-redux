@@ -1,21 +1,40 @@
+import { createStore } from 'redux';
+
 const add = document.getElementById("add")
 const minus = document.getElementById("minus")
 const number = document.querySelector("span");
 
-let count = 0;
-number.innerHTML = count;
 
-const updateText = () => {
-    number.innerHTML = count;
+// * reducer : a function that modifies the data(state)
+const countModifier = (count = 0, action) => {
+    if(action.type === "ADD"){
+        return count + 1;
+    }else if(action.type === "MINUS"){
+        return count - 1;
+    }else {
+        return count;
+    }
+};
+
+
+const countStore = createStore(countModifier);
+
+const onChange = () => {
+    console.log("there was a change on the store.");
+    number.innerHTML = countStore.getState();
 }
 
+// subscribe : to allow us listen for changes in our stroe.
+countStore.subscribe(onChange);
+
+
+// a way of communicating with a reducer is to dispatch, sending a action!
 const handleAdd = () => {
-    count += 1;
-    updateText(0);
+    countStore.dispatch({type: "ADD"});
 }
+
 const handleMinus = () => {
-    count -= 1;
-    updateText(0);
+    countStore.dispatch({type: "MINUS"});
 }
 
 add.addEventListener("click", handleAdd);
