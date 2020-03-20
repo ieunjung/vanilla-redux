@@ -1,43 +1,76 @@
-import { createStore } from 'redux';
+import {createStore} from 'redux';
 
-const add = document.getElementById("add")
-const minus = document.getElementById("minus")
-const number = document.querySelector("span");
 
-const ADD = "ADD";
-const MINUS = "MINUS";
+const form = document.querySelector("form");
+const input = document.querySelector("input");
+const ul = document.querySelector("ul");
 
-// * reducer : a function that modifies the data(state)
-const countModifier = (count = 0, action) => {
+const ADD_TODO = "ADD_TODO";
+const DELETE_TODO = "DELETE_TODO";
+
+// action creators that returns an object
+const addToDo = (text) => {
+    return { type: ADD_TODO, text }
+}
+const deleteToDo = (id) => {
+    return { type: DELETE_TODO, id }
+}
+
+// NEVER USE MUTATE THE STATE! ALWAYS Return new state!
+// state : read-only
+// Array.slice() => mutates the old array
+// Array.filter(test) => makes a new array
+// the only way to change the state is to emit an aciton.
+const reducer = (state = [], action) => {
     switch (action.type) {
-        case ADD:
-            return count + 1;
-        case MINUS:
-            return count - 1;
+        case ADD_TODO:
+            const newToDo = { text: action.text, id: Date.now() };
+            return [newToDo, ...state];
+        case DELETE_TODO:
+            const cleaned = state.filter(toDo => toDo.id !== parseInt(action.id));
+            return cleaned;
         default:
-            return count;
+            return state;
     }
 };
 
 
-const countStore = createStore(countModifier);
+const store = createStore(reducer);
 
-const onChange = () => {
-    console.log("there was a change on the store.");
-    number.innerHTML = countStore.getState();
+// store.subscribe(() => console.log(store.getState()));
+
+const dispatchAddToDo = (text) => {
+    store.dispatch(addToDo(text));
 }
 
-// subscribe : to allow us listen for changes in our stroe.
-countStore.subscribe(onChange);
-
-// action : a way of communicating with a reducer is to dispatch, sending a action!
-const handleAdd = () => {
-    countStore.dispatch({type: ADD });
+const dispatchDeleteToDo = (e) => {
+    const id = parseInt(e.target.parentNode.id);
+    store.dispatch(deleteToDo(id));
 }
 
-const handleMinus = () => {
-    countStore.dispatch({type: MINUS });
+const paintToDos = () => {
+    const toDos = store.getState(); // repainting
+    ul.innerHTML = "";
+    toDos.forEach(toDo => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.innerText = "DEL";
+        btn.addEventListener("click", dispatchDeleteToDo);
+
+        li.id = toDo.id;
+        li.innerText = toDo.text;
+        li.appendChild(btn);
+        ul.appendChild(li);
+    })
 }
 
-add.addEventListener("click", handleAdd);
-minus.addEventListener("click", handleMinus);
+store.subscribe(paintToDos);
+
+const onSubmit = e => {
+    e.preventDefault();
+    const toDo = input.value;
+    input.value = "";
+    dispatchAddToDo(toDo);
+}
+
+form.addEventListener("submit", onSubmit);
